@@ -1,6 +1,8 @@
 import express from "express";
 const router = express.Router();
 
+import gameRoutes from "./game.routes";
+
 router.get("/", (req, res) => {
   res.json({
     message:
@@ -10,5 +12,7 @@ router.get("/", (req, res) => {
     github: "github.com/jhayes99823",
   });
 });
+
+router.use("/game", gameRoutes);
 
 export default router;
