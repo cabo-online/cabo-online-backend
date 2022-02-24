@@ -8,3 +8,8 @@ export interface IGame extends Document {
 export interface IGameDTO {
     name: string
 }
+
+export interface IJoinGameDTO {
+    name: string,
+    game_code: string
+}

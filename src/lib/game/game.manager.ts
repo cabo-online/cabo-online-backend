@@ -1,6 +1,7 @@
 import { IGameDTO } from "./game.interface";
 import { Game } from "./game.model";
 import { generate } from 'randomstring';
+import { IJoinGameDTO } from ".";
 
 export class GameManager {
     private static _theInstance: GameManager = null as any;
@@ -16,6 +17,14 @@ export class GameManager {
     private constructor() {}
 
     async createInitialGame(data: IGameDTO) {
+        if (!data.name) {
+            return {
+                status: 400,
+                message: 'Must Provide Name',
+                success: false
+            } 
+        }
+
         let game = new Game();
 
         game.players.push(data.name);
@@ -45,5 +54,48 @@ export class GameManager {
         }
 
         return value;
+    }
+
+    async joinGame(data: IJoinGameDTO) {
+        if (!data.name) {
+            return {
+                status: 400,
+                message: 'Must Provide Name',
+                success: false
+            } 
+        }
+
+        if (!data.game_code) {
+            return {
+                status: 400,
+                message: 'Must Provide Game Code',
+                success: false
+            } 
+        }
+
+        let gameToJoin = await Game.findOne({ game_code: data.game_code }).exec();
+
+        if (!gameToJoin) {
+            return {
+                status: 400,
+                message: 'Invalid Game Code',
+                success: false
+            }
+        }
+
+        gameToJoin.players.push(data.name);
+
+        gameToJoin.save();
+
+        return {
+            status: 200,
+            message: `${data.name} joined game with code ${data.game_code}`,
+            success: true,
+            data: {
+                id: gameToJoin.id,
+                game_code: gameToJoin.game_code,
+                players: gameToJoin.players
+            }
+        }
     }
 }
