@@ -1,7 +1,8 @@
 import { IGameDTO } from "./game.interface";
-import { Game } from "./game.model";
-import { generate } from 'randomstring';
 import { IJoinGameDTO } from ".";
+import gameRepository from "./game.repository";
+import { errorResponse, invalidParamResponse, missingParamResponse, successResponse } from "../common/responses";
+import { PARAM_GAME_CODE, PARAM_NAME } from "./constants";
 
 export class GameManager {
     private static _theInstance: GameManager = null as any;
@@ -18,84 +19,37 @@ export class GameManager {
 
     async createInitialGame(data: IGameDTO) {
         if (!data.name) {
-            return {
-                status: 400,
-                message: 'Must Provide Name',
-                success: false
-            } 
+            return missingParamResponse(PARAM_NAME);
         }
 
-        let game = new Game();
+        const createdGame = await gameRepository.createGame(data);
 
-        game.players.push(data.name);
-        game.game_code = await this._generateRandomGameCode();
+        if (createdGame.success) return successResponse(201, createdGame.message, createdGame.data);
 
-        game.save();
-
-        return {
-            success: true,
-            message: 'Game Created',
-            statusCode: 201,
-            data: {
-                id: game.id,
-                game_code: game.game_code,
-                players: game.players
-            }
-        };
+        return errorResponse(400, createdGame.message);
     }
 
-    private async _generateRandomGameCode() {
-        let value = generate(10);
-        let game = await Game.findOne({ game_code: value }).exec();
 
-        while (game) {
-            value = generate(10);
-            game = await Game.findOne({ game_code: value }).exec();
-        }
-
-        return value;
-    }
 
     async joinGame(data: IJoinGameDTO) {
         if (!data.name) {
-            return {
-                status: 400,
-                message: 'Must Provide Name',
-                success: false
-            } 
+            return missingParamResponse(PARAM_NAME);
         }
 
         if (!data.game_code) {
-            return {
-                status: 400,
-                message: 'Must Provide Game Code',
-                success: false
-            } 
+            return missingParamResponse(PARAM_GAME_CODE);
         }
 
-        let gameToJoin = await Game.findOne({ game_code: data.game_code }).exec();
+        let gameToJoin = await gameRepository.findGameByGameCode(data.game_code);
 
         if (!gameToJoin) {
-            return {
-                status: 400,
-                message: 'Invalid Game Code',
-                success: false
-            }
+            return invalidParamResponse(PARAM_GAME_CODE, data.game_code);
         }
 
-        gameToJoin.players.push(data.name);
+        const response = await gameRepository.addPlayerToGame(data.game_code, data.name);
 
-        gameToJoin.save();
+        if (response?.success) return successResponse(200, response.message, response.data);
 
-        return {
-            status: 200,
-            message: `${data.name} joined game with code ${data.game_code}`,
-            success: true,
-            data: {
-                id: gameToJoin.id,
-                game_code: gameToJoin.game_code,
-                players: gameToJoin.players
-            }
-        }
+        return errorResponse(400, response?.message);
     }
 }
