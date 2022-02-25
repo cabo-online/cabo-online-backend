@@ -52,4 +52,26 @@ export class GameManager {
 
         return errorResponse(400, response?.message);
     }
+
+    async findGameByGameCode(game_code: string) {
+        if (!game_code) {
+            return missingParamResponse(PARAM_GAME_CODE);
+        }
+
+        let game = await gameRepository.findGameByGameCode(game_code);
+
+        if (!game) {
+            return invalidParamResponse(PARAM_GAME_CODE, game_code);
+        }
+
+        return {
+            success: true,
+            message: 'Game Found',
+            data: {
+                id: game.id,
+                game_code: game.game_code,
+                players: game.players
+            }
+        }
+    }
 }

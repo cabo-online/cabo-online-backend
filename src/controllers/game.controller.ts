@@ -21,3 +21,14 @@ export const joinGame = async (req: any, res: any) => {
 
     res.json(joinGameResponse);
 }
+
+export const getGameByGameCode = async (req: any, res: any) => {
+    const game_code = req.query.id;
+
+    const mgr = GameManager.getInstance();
+    const findGameResponse = await mgr.findGameByGameCode(game_code);
+    
+    console.log('findGameResponse', findGameResponse);
+
+    res.josn(findGameResponse);
+}
